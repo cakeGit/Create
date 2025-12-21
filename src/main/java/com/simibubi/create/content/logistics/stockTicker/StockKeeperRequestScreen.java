@@ -222,6 +222,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		searchBox.setMaxLength(50);
 		searchBox.setBordered(false);
 		searchBox.setTextColor(0x4A2D31);
+		searchBox.setFocused(true);
 		addWidget(searchBox);
 
 		boolean initial = addressBox == null;
@@ -1047,11 +1048,11 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 
 	@Override
 	public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-		boolean lmb = pButton == GLFW.GLFW_MOUSE_BUTTON_LEFT;
-		boolean rmb = pButton == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+		boolean lmbClicked = pButton == GLFW.GLFW_MOUSE_BUTTON_LEFT;
+		boolean rmbClicked = pButton == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 
 		// Search
-		if (rmb && searchBox.isMouseOver(pMouseX, pMouseY)) {
+		if (rmbClicked && searchBox.isMouseOver(pMouseX, pMouseY)) {
 			searchBox.setValue("");
 			refreshSearchNextTick = true;
 			moveToTopNextTick = true;
@@ -1074,7 +1075,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 
 		// Scroll bar
 		int barX = itemsX + cols * colWidth - 1;
-		if (getMaxScroll() > 0 && lmb && pMouseX > barX && pMouseX <= barX + 8 && pMouseY > getGuiTop() + 15
+		if (getMaxScroll() > 0 && lmbClicked && pMouseX > barX && pMouseX <= barX + 8 && pMouseY > getGuiTop() + 15
 			&& pMouseY < getGuiTop() + windowHeight - 82) {
 			scrollHandleActive = true;
 			if (minecraft.isWindowActive())
@@ -1086,7 +1087,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		Couple<Integer> hoveredSlot = getHoveredSlot((int) pMouseX, (int) pMouseY);
 
 		// Lock
-		if (isAdmin && itemScroll.getChaseTarget() == 0 && lmb && pMouseX > lockX && pMouseX <= lockX + 15
+		if (isAdmin && itemScroll.getChaseTarget() == 0 && lmbClicked && pMouseX > lockX && pMouseX <= lockX + 15
 			&& pMouseY > lockY && pMouseY <= lockY + 15) {
 			isLocked = !isLocked;
 			CatnipServices.NETWORK.sendToServer(new StockKeeperLockPacket(blockEntity.getBlockPos(), isLocked));
@@ -1095,7 +1096,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		}
 
 		// Confirm
-		if (lmb && isConfirmHovered((int) pMouseX, (int) pMouseY)) {
+		if (lmbClicked && isConfirmHovered((int) pMouseX, (int) pMouseY)) {
 			sendIt();
 			playUiSound(SoundEvents.UI_BUTTON_CLICK.value(), 1, 1);
 			return true;
@@ -1103,7 +1104,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 
 		// Category hiding
 		int localY = (int) (pMouseY - itemsY);
-		if (itemScroll.settled() && lmb && !categories.isEmpty() && pMouseX >= itemsX
+		if (itemScroll.settled() && lmbClicked && !categories.isEmpty() && pMouseX >= itemsX
 			&& pMouseX < itemsX + cols * colWidth && pMouseY >= getGuiTop() + 16
 			&& pMouseY <= getGuiTop() + windowHeight - 80) {
 			for (int categoryIndex = 0; categoryIndex < displayedItems.size(); categoryIndex++) {
@@ -1131,7 +1132,7 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 			}
 		}
 
-		if (hoveredSlot == noneHovered || !lmb && !rmb)
+		if (hoveredSlot == noneHovered || !lmbClicked && !rmbClicked)
 			return super.mouseClicked(pMouseX, pMouseY, pButton);
 
 		// Items
@@ -1139,24 +1140,23 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		boolean recipeClicked = hoveredSlot.getFirst() == -2;
 		BigItemStack entry = recipeClicked ? recipesToOrder.get(hoveredSlot.getSecond())
 			: orderClicked ? itemsToOrder.get(hoveredSlot.getSecond())
-			: displayedItems.get(hoveredSlot.getFirst())
-			.get(hoveredSlot.getSecond());
+			: displayedItems.get(hoveredSlot.getFirst()).get(hoveredSlot.getSecond());
 
 		ItemStack itemStack = entry.stack;
 		int transfer = hasShiftDown() ? itemStack.getMaxStackSize() : hasControlDown() ? 10 : 1;
 
 		if (recipeClicked && entry instanceof CraftableBigItemStack cbis) {
-			if (rmb && cbis.count == 0) {
+			if (rmbClicked && cbis.count == 0) {
 				recipesToOrder.remove(cbis);
 				return true;
 			}
-			requestCraftable(cbis, rmb ? -transfer : transfer);
+			requestCraftable(cbis, rmbClicked ? -transfer : transfer);
 			return true;
 		}
 
 		BigItemStack existingOrder = getOrderForItem(entry.stack);
 		if (existingOrder == null) {
-			if (itemsToOrder.size() >= cols || rmb)
+			if (itemsToOrder.size() >= cols || rmbClicked)
 				return true;
 			itemsToOrder.add(existingOrder = new BigItemStack(itemStack.copyWithCount(1), 0));
 			playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.2f);
@@ -1165,7 +1165,10 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 
 		int current = existingOrder.count;
 
-		if (rmb || orderClicked) {
+		if (rmbClicked || orderClicked) {
+			if (rmbClicked) {
+				transfer = existingOrder.count == 1 ? 1 : existingOrder.count / 2;
+			}
 			existingOrder.count = current - transfer;
 			if (existingOrder.count <= 0) {
 				itemsToOrder.remove(existingOrder);
@@ -1210,10 +1213,10 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		boolean recipeClicked = hoveredSlot.getFirst() == -2;
 		BigItemStack entry = recipeClicked ? recipesToOrder.get(hoveredSlot.getSecond())
 			: orderClicked ? itemsToOrder.get(hoveredSlot.getSecond())
-			: displayedItems.get(hoveredSlot.getFirst())
-			.get(hoveredSlot.getSecond());
+			: displayedItems.get(hoveredSlot.getFirst()).get(hoveredSlot.getSecond());
 
 		boolean remove = scrollY < 0;
+		int stackSnapping = entry.stack.getMaxStackSize() / 4;
 		int transfer = Mth.ceil(Math.abs(scrollY)) * (hasControlDown() ? 10 : 1);
 
 		if (recipeClicked && entry instanceof CraftableBigItemStack cbis) {
@@ -1225,12 +1228,18 @@ public class StockKeeperRequestScreen extends AbstractSimiContainerScreen<StockK
 		if (existingOrder == null) {
 			if (itemsToOrder.size() >= cols || remove)
 				return true;
-			itemsToOrder.add(existingOrder = new BigItemStack(entry.stack.copyWithCount(1), 0));
+			itemsToOrder.add(existingOrder = new BigItemStack(entry.stack.copyWithCount(hasShiftDown() ? stackSnapping : 1), 0));
 			playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.2f);
 			playUiSound(SoundEvents.BAMBOO_WOOD_STEP, 0.75f, 0.8f);
 		}
 
 		int current = existingOrder.count;
+
+		if (hasShiftDown()) {
+			int target = ((Math.floorDiv(current, stackSnapping) + (remove ? -1 : 1)) * stackSnapping);
+			target = Math.max(1, target);
+			transfer = (remove ? -1 : 1) * (target - current);
+		}
 
 		if (remove) {
 			existingOrder.count = current - transfer;
