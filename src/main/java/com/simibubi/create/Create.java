@@ -2,6 +2,8 @@ package com.simibubi.create;
 
 import java.util.Random;
 
+import com.simibubi.create.content.kinetics.belt.AllBeltCasingTypes;
+
 import org.slf4j.Logger;
 
 import com.google.gson.Gson;
@@ -194,6 +196,7 @@ public class Create {
 		AllPotatoProjectileRenderModes.init();
 		AllPotatoProjectileEntityHitActions.init();
 		AllPotatoProjectileBlockHitActions.init();
+		AllBeltCasingTypes.init();
 
 		if (event.getRegistry() == BuiltInRegistries.TRIGGER_TYPES) {
 			AllAdvancements.register();

@@ -8,7 +8,6 @@ import java.util.Optional;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.belt.transport.BeltInventory;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
@@ -93,7 +92,7 @@ public class BeltSlicer {
 			BlockState replacedState = world.getBlockState(next);
 			BeltBlockEntity segmentBE = BeltHelper.getSegmentBE(world, next);
 			KineticBlockEntity.switchToBlockState(world, next, ProperWaterloggedBlock.withWater(world,
-				state.setValue(BeltBlock.CASING, segmentBE != null && segmentBE.casing != CasingType.NONE), next));
+				state.setValue(BeltBlock.CASING, segmentBE != null && segmentBE.casing != null), next));
 			world.setBlock(pos, ProperWaterloggedBlock.withWater(world, Blocks.AIR.defaultBlockState(), pos),
 				Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
 			world.removeBlockEntity(pos);
@@ -302,7 +301,7 @@ public class BeltSlicer {
 							mergedBeltLength - transportedItemStack.prevBeltPosition;
 					}
 				}
-				
+
 				beltChain = BeltBlock.getBeltChain(world, mergedController.getBlockPos());
 			}
 		}
@@ -348,7 +347,7 @@ public class BeltSlicer {
 					player == null ? SoundSource.BLOCKS : SoundSource.PLAYERS, 0.5F, 1.3F);
 				BeltBlockEntity segmentBE = BeltHelper.getSegmentBE(world, next);
 				KineticBlockEntity.switchToBlockState(world, next,
-					state.setValue(BeltBlock.CASING, segmentBE != null && segmentBE.casing != CasingType.NONE)
+					state.setValue(BeltBlock.CASING, segmentBE != null && segmentBE.casing != null)
 						.setValue(BeltBlock.PART, BeltPart.MIDDLE));
 
 				if (!creative) {
@@ -362,7 +361,7 @@ public class BeltSlicer {
 						continue;
 					belt.invalidateItemHandler();
 				}
-				
+
 				// Transfer items to other controller
 				BlockPos search = controllerBE.getBlockPos();
 				for (int i = 0; i < 10000; i++) {
